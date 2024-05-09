@@ -292,7 +292,7 @@ def assert_value_smaller_than_input_size(
                 f"'{value_name}' must be smaller than input size."
                 f" [{value} >= {np.prod(x.shape[1:])}]"
             )
-    if value >= np.prod(x.shape[2:]):
+    elif value >= np.prod(x.shape[2:]):
         raise ValueError(
             f"'{value_name}' must be smaller than input size."
             f" [{value} >= {np.prod(x.shape[2:])}]"
