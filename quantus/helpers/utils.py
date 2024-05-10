@@ -153,7 +153,7 @@ def get_baseline_dict(
             high=kwargs.get("uniform_high", 1.0),
             size=kwargs["return_shape"],
         ),
-        "black": float(arr.min()),
+        "black": float(0.0),
         "white": float(arr.max()),
     }
     if patch is not None:

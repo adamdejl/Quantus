@@ -77,6 +77,7 @@ class Infidelity(Metric[List[float]]):
         perturb_func: Optional[Callable] = None,
         perturb_baseline: str = "black",
         perturb_func_kwargs: Optional[Dict[str, Any]] = None,
+        attribs_multiplied_by_inputs: bool = False,
         return_aggregate: bool = False,
         aggregate_func: Optional[Callable] = None,
         default_plot_func: Optional[Callable] = None,
@@ -152,9 +153,11 @@ class Infidelity(Metric[List[float]]):
 
         if perturb_patch_sizes is None:
             perturb_patch_sizes = [4]
+        self.attribs_multiplied_by_inputs = attribs_multiplied_by_inputs
         self.perturb_patch_sizes = perturb_patch_sizes
         self.n_perturb_samples = n_perturb_samples
         self.nr_channels = None
+        self.perturb_baseline = perturb_baseline
         self.perturb_func = make_perturb_func(
             perturb_func, perturb_func_kwargs, perturb_baseline=perturb_baseline
         )
@@ -326,12 +329,12 @@ class Infidelity(Metric[List[float]]):
                 a_sums = np.zeros(
                     (int(a.shape[1] / patch_size), int(a.shape[2] / patch_size))
                 )
-                x_perturbed = x.copy()
                 pad_width = patch_size - 1
 
                 for i_x, top_left_x in enumerate(range(0, x.shape[1], patch_size)):
                     for i_y, top_left_y in enumerate(range(0, x.shape[2], patch_size)):
                         # Perturb input patch-wise.
+                        x_perturbed = x.copy()
                         x_perturbed_pad = utils._pad_array(
                             x_perturbed, pad_width, mode="edge", padded_axes=self.a_axes
                         )
@@ -361,9 +364,13 @@ class Infidelity(Metric[List[float]]):
                         y_pred_perturb = float(model.predict(x_input)[:, y])
 
                         x_diff = x - x_perturbed
-                        a_diff = np.dot(
-                            np.repeat(a, repeats=self.nr_channels, axis=0), x_diff
-                        )
+                        if self.attribs_multiplied_by_inputs:
+                            x_diff /= x - utils.get_baseline_value(
+                                value=self.perturb_baseline,
+                                arr=x,
+                                return_shape=tuple(x.shape),
+                            )
+                        a_diff = np.repeat(a, repeats=self.nr_channels, axis=0) * x_diff
 
                         pred_deltas[i_x][i_y] = y_pred - y_pred_perturb
                         a_sums[i_x][i_y] = np.sum(a_diff)
