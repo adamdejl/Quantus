@@ -246,10 +246,7 @@ class Complexity(Metric[List[float]]):
             The evaluation results.
         """
 
-        if len(x.shape) == 1:
-            newshape = np.prod(x.shape)
-        else:
-            newshape = np.prod(x.shape[1:])
+        newshape = np.prod(x.shape)
 
         a = np.array(np.reshape(a, newshape), dtype=np.float64) / np.sum(np.abs(a))
         return scipy.stats.entropy(pk=a)
